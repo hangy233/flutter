@@ -58,7 +58,13 @@ class Net {
         sink = destFile.openWrite();
       }
 
-      final bool result = await _attempt(url, destSink: sink);
+      final bool result;
+      try {
+        result = await _attempt(url, destSink: sink);
+      } finally {
+        await sink.flush();
+        await sink.close();
+      }
       if (result) {
         return memorySink?.writes.takeBytes() ?? <int>[];
       }
@@ -151,9 +157,6 @@ class Net {
     } on IOException catch (error) {
       _logger.printTrace('Download error: $error');
       return false;
-    } finally {
-      await destSink?.flush();
-      await destSink?.close();
     }
   }
 }

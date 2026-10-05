@@ -13,6 +13,7 @@ import 'package:flutter_tools/src/base/io.dart';
 import 'package:flutter_tools/src/base/logger.dart';
 import 'package:flutter_tools/src/base/net.dart';
 import 'package:flutter_tools/src/base/platform.dart';
+import 'package:test/fake.dart';
 
 import '../../src/common.dart';
 import '../../src/fake_http_client.dart';
@@ -67,6 +68,59 @@ void main() {
       );
       expect(data, equals(<int>[]));
       expect(destFile.readAsStringSync(), responseString);
+    });
+  });
+
+  group('failed fetch to a file', () {
+    final Uri url = Uri.parse('http://example.invalid/');
+
+    for (final (description, responseError, statusCode) in <(String, Object?, int)>[
+      ('SocketException', const SocketException('test'), HttpStatus.ok),
+      ('HttpException', const HttpException('test'), HttpStatus.ok),
+      ('server error', null, HttpStatus.internalServerError),
+    ]) {
+      testWithoutContext('closes the destination before retrying $description', () async {
+        final destFile = _FakeFile();
+        final client = FakeHttpClient.list(<FakeRequest>[
+          FakeRequest(
+            url,
+            responseError: responseError,
+            response: FakeResponse(statusCode: statusCode),
+          ),
+          FakeRequest(url),
+        ]);
+        var attempts = 0;
+        final net = Net(
+          httpClientFactory: () {
+            if (attempts > 0) {
+              expect(destFile.sinks[attempts - 1].closeCount, 1);
+            }
+            attempts += 1;
+            return client;
+          },
+          logger: testLogger,
+          platform: FakePlatform(),
+        );
+
+        await net.fetchUrl(url, destFile: destFile, durationOverride: Duration.zero);
+
+        expect(attempts, 2);
+        expect(destFile.sinks, hasLength(2));
+        expect(destFile.sinks.map((_FakeIOSink sink) => sink.closeCount), everyElement(1));
+      });
+    }
+
+    testWithoutContext('closes the destination after a non-retryable error', () async {
+      final destFile = _FakeFile();
+      final Net net = createNet(
+        FakeHttpClient.list(<FakeRequest>[
+          FakeRequest(url, response: const FakeResponse(statusCode: HttpStatus.notFound)),
+        ]),
+      );
+
+      await expectToolExitLater(net.fetchUrl(url, destFile: destFile), contains('404'));
+
+      expect(destFile.sinks.single.closeCount, 1);
     });
   });
 
@@ -393,4 +447,30 @@ void main() {
     final bool result = await net.doesRemoteFileExist(valid);
     expect(result, true);
   });
+}
+
+class _FakeFile extends Fake implements File {
+  final sinks = <_FakeIOSink>[];
+
+  @override
+  IOSink openWrite({FileMode mode = FileMode.write, Encoding encoding = utf8}) {
+    final sink = _FakeIOSink();
+    sinks.add(sink);
+    return sink;
+  }
+}
+
+class _FakeIOSink extends Fake implements IOSink {
+  int closeCount = 0;
+
+  @override
+  void add(List<int> data) {}
+
+  @override
+  Future<void> flush() async {}
+
+  @override
+  Future<void> close() async {
+    closeCount += 1;
+  }
 }
