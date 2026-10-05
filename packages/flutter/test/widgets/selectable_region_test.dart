@@ -230,6 +230,60 @@ void main() {
   }
 
   group('SelectableRegion', () {
+    testWidgets('replacing the focus node stops listening to the previous node', (
+      WidgetTester tester,
+    ) async {
+      final firstFocusNode = FocusNode();
+      addTearDown(firstFocusNode.dispose);
+      final secondFocusNode = FocusNode();
+      addTearDown(secondFocusNode.dispose);
+      final key = GlobalKey<SelectableRegionState>();
+      SelectedContent? selectedContent;
+
+      Widget build(FocusNode focusNode) {
+        return TestWidgetsApp(
+          home: Column(
+            children: <Widget>[
+              _selectableRegion(
+                key: key,
+                focusNode: focusNode,
+                onSelectionChanged: (SelectedContent? content) {
+                  selectedContent = content;
+                },
+                child: const Text('Selectable text'),
+              ),
+              Focus(
+                focusNode: focusNode == firstFocusNode ? null : firstFocusNode,
+                child: const SizedBox(),
+              ),
+            ],
+          ),
+        );
+      }
+
+      await setAppLifecycleState(AppLifecycleState.resumed);
+      await tester.pumpWidget(build(firstFocusNode));
+      await tester.pumpWidget(build(secondFocusNode));
+      key.currentState!.selectAll();
+      await tester.pump();
+      expect(selectedContent?.plainText, 'Selectable text');
+
+      // The previous focus node can be reused without affecting this selection.
+      firstFocusNode.requestFocus();
+      await tester.pump();
+      expect(firstFocusNode.hasFocus, isTrue);
+      expect(secondFocusNode.hasFocus, isFalse);
+      expect(selectedContent?.plainText, 'Selectable text');
+
+      secondFocusNode.requestFocus();
+      await tester.pump();
+      expect(secondFocusNode.hasFocus, isTrue);
+      expect(selectedContent?.plainText, 'Selectable text');
+      secondFocusNode.unfocus();
+      await tester.pump();
+      expect(selectedContent, isNull);
+    });
+
     testWidgets('mouse selection single click sends correct events', (WidgetTester tester) async {
       final spy = UniqueKey();
       await tester.pumpWidget(

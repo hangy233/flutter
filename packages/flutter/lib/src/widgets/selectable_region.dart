@@ -513,7 +513,7 @@ class SelectableRegionState extends State<SelectableRegion>
         _localFocusNode?.removeListener(_handleFocusChanged);
         _localFocusNode?.dispose();
         _localFocusNode = null;
-      } else if (widget.focusNode == null && oldWidget.focusNode != null) {
+      } else if (oldWidget.focusNode != null) {
         oldWidget.focusNode!.removeListener(_handleFocusChanged);
       }
       _focusNode.addListener(_handleFocusChanged);
