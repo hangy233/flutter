@@ -233,6 +233,119 @@ void main() {
       variant: TargetPlatformVariant.all(),
     );
 
+    testWidgets('replacing the controller detaches the previous undo and redo listeners', (
+      WidgetTester tester,
+    ) async {
+      final value = ValueNotifier<int>(0);
+      addTearDown(value.dispose);
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      final firstController = UndoHistoryController();
+      addTearDown(firstController.dispose);
+      final secondController = UndoHistoryController();
+      addTearDown(secondController.dispose);
+      final key = GlobalKey<UndoHistoryState<int>>();
+
+      Widget build(UndoHistoryController? controller) {
+        return TestWidgetsApp(
+          home: UndoHistory<int>(
+            key: key,
+            value: value,
+            controller: controller,
+            onTriggered: (int newValue) {
+              value.value = newValue;
+            },
+            focusNode: focusNode,
+            child: const SizedBox(),
+          ),
+        );
+      }
+
+      await tester.pumpWidget(build(firstController));
+      await tester.pump(const Duration(milliseconds: 500));
+      value.value = 1;
+      await tester.pump(const Duration(milliseconds: 500));
+      value.value = 2;
+      await tester.pump(const Duration(milliseconds: 500));
+      firstController.undo();
+      expect(value.value, 1);
+
+      await tester.pumpWidget(build(secondController));
+      firstController.undo();
+      expect(value.value, 1);
+      firstController.redo();
+      expect(value.value, 1);
+
+      // Reusing a previous controller must not register duplicate listeners.
+      await tester.pumpWidget(build(firstController));
+      firstController.redo();
+      expect(value.value, 2);
+      firstController.undo();
+      expect(value.value, 1);
+      secondController.undo();
+      expect(value.value, 1);
+      secondController.redo();
+      expect(value.value, 1);
+
+      await tester.pumpWidget(build(null));
+      firstController.undo();
+      expect(value.value, 1);
+      firstController.redo();
+      expect(value.value, 1);
+      key.currentState!.redo();
+      expect(value.value, 2);
+      key.currentState!.undo();
+      expect(value.value, 1);
+    });
+
+    for (final provideInitialController in <bool>[false, true]) {
+      testWidgets(
+        'replacing ${provideInitialController ? 'an external' : 'the internal'} controller preserves the undo history',
+        (WidgetTester tester) async {
+          final value = ValueNotifier<int>(0);
+          addTearDown(value.dispose);
+          final focusNode = FocusNode();
+          addTearDown(focusNode.dispose);
+          final firstController = UndoHistoryController();
+          addTearDown(firstController.dispose);
+          final secondController = UndoHistoryController();
+          addTearDown(secondController.dispose);
+          final key = GlobalKey<UndoHistoryState<int>>();
+
+          Widget build(UndoHistoryController? controller) {
+            return TestWidgetsApp(
+              home: UndoHistory<int>(
+                key: key,
+                value: value,
+                controller: controller,
+                onTriggered: (int newValue) {
+                  value.value = newValue;
+                },
+                focusNode: focusNode,
+                child: const SizedBox(),
+              ),
+            );
+          }
+
+          await tester.pumpWidget(build(provideInitialController ? firstController : null));
+          await tester.pump(const Duration(milliseconds: 500));
+          value.value = 1;
+          await tester.pump(const Duration(milliseconds: 500));
+          value.value = 2;
+          await tester.pump(const Duration(milliseconds: 500));
+          key.currentState!.undo();
+          expect(value.value, 1);
+
+          await tester.pumpWidget(build(secondController));
+          expect(secondController.value, const UndoHistoryValue(canUndo: true, canRedo: true));
+          secondController.undo();
+          expect(value.value, 0);
+          secondController.redo();
+          expect(value.value, 1);
+        },
+      );
+    }
+
     testWidgets(
       'allows undo and redo to be called using the keyboard',
       (WidgetTester tester) async {

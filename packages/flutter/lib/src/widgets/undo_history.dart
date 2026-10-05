@@ -259,12 +259,14 @@ class UndoHistoryState<T> extends State<UndoHistory<T>> with UndoManagerClient {
       widget.focusNode.addListener(_handleFocus);
     }
     if (widget.controller != oldWidget.controller) {
-      _effectiveController.onUndo.removeListener(undo);
-      _effectiveController.onRedo.removeListener(redo);
+      final UndoHistoryController oldController = oldWidget.controller ?? _controller!;
+      oldController.onUndo.removeListener(undo);
+      oldController.onRedo.removeListener(redo);
       _controller?.dispose();
       _controller = null;
       _effectiveController.onUndo.addListener(undo);
       _effectiveController.onRedo.addListener(redo);
+      _updateState();
     }
   }
 
