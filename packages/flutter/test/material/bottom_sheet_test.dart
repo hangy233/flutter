@@ -1890,6 +1890,44 @@ void main() {
     },
   );
 
+  for (final dragCount in <int>[0, 3]) {
+    testWidgets(
+      'Modal bottom sheet removes all listeners from caller-owned controller (drags: $dragCount)',
+      (WidgetTester tester) async {
+        final scaffoldKey = GlobalKey<ScaffoldState>();
+        final controller = _StatusTestAnimationController(
+          vsync: const TestVSync(),
+          duration: const Duration(milliseconds: 250),
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(MaterialApp(home: Scaffold(key: scaffoldKey)));
+        expect(controller.isListening, isFalse);
+
+        showModalBottomSheet<void>(
+          context: scaffoldKey.currentContext!,
+          transitionAnimationController: controller,
+          builder: (BuildContext context) =>
+              const SizedBox(height: 300, child: Text('BottomSheet')),
+        );
+        await tester.pumpAndSettle();
+        expect(controller.isListening, isTrue);
+
+        for (var i = 0; i < dragCount; i++) {
+          await tester.drag(find.byType(BottomSheet), const Offset(0, 40));
+          await tester.pumpAndSettle();
+          expect(find.byType(BottomSheet), findsOneWidget);
+          expect(controller.isCompleted, isTrue);
+        }
+
+        Navigator.of(scaffoldKey.currentContext!).pop();
+        await tester.pumpAndSettle();
+        expect(find.byType(BottomSheet), findsNothing);
+        expect(controller.isListening, isFalse);
+      },
+    );
+  }
+
   testWidgets(
     'The framework removes all animation listeners from foreign controllers when disposing.',
     (WidgetTester tester) async {
