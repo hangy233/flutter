@@ -1,0 +1,21 @@
+name: cupertino_switch_dynamic_color_demo
+description: A before-and-after demonstration of CupertinoSwitch adaptive colors.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.14.0-294.0.dev
+
+dependencies:
+  flutter:
+    sdk: flutter
+  material_ui: ^1.1.0
+  cupertino_ui: 1.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,7 @@
+.dart_tool/
+.patched/
+build/
+coverage/
+pubspec_overrides.yaml
+.flutter-plugins-dependencies
+*.log

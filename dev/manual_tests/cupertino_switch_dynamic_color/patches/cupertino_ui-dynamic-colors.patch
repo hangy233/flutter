@@ -1,0 +1,81 @@
+--- a/lib/src/switch.dart
++++ b/lib/src/switch.dart
+@@ -738,17 +738,24 @@
+     final Set<WidgetState> activeStates = states..add(WidgetState.selected);
+     final Set<WidgetState> inactiveStates = states..remove(WidgetState.selected);
+ 
+-    final Color effectiveActiveThumbColor =
+-        _resolveThumbColor(widget.thumbColor, activeStates) ??
+-        _widgetThumbColor.resolve(activeStates) ??
+-        CupertinoColors.white;
+-
+-    final Color effectiveInactiveThumbColor =
+-        _resolveThumbColor(widget.inactiveThumbColor, inactiveStates) ??
+-        _widgetThumbColor.resolve(inactiveStates) ??
+-        effectiveActiveThumbColor;
+-
+-    final Color effectiveActiveTrackColor = _widgetTrackColor.resolve(activeStates) ?? activeColor;
++    final Color effectiveActiveThumbColor = CupertinoDynamicColor.resolve(
++      _resolveThumbColor(widget.thumbColor, activeStates) ??
++          _widgetThumbColor.resolve(activeStates) ??
++          CupertinoColors.white,
++      context,
++    );
++
++    final Color effectiveInactiveThumbColor = CupertinoDynamicColor.resolve(
++      _resolveThumbColor(widget.inactiveThumbColor, inactiveStates) ??
++          _widgetThumbColor.resolve(inactiveStates) ??
++          effectiveActiveThumbColor,
++      context,
++    );
++
++    final Color effectiveActiveTrackColor = CupertinoDynamicColor.resolve(
++      _widgetTrackColor.resolve(activeStates) ?? activeColor,
++      context,
++    );
+ 
+     final Color? effectiveActiveTrackOutlineColor = widget.trackOutlineColor?.resolve(activeStates);
+ 
+@@ -756,9 +763,10 @@
+       activeStates,
+     );
+ 
+-    final Color effectiveInactiveTrackColor =
+-        _resolveTrackColor(widget.trackColor, inactiveStates) ??
+-        CupertinoDynamicColor.resolve(CupertinoColors.secondarySystemFill, context);
++    final Color effectiveInactiveTrackColor = CupertinoDynamicColor.resolve(
++      _resolveTrackColor(widget.trackColor, inactiveStates) ?? CupertinoColors.secondarySystemFill,
++      context,
++    );
+ 
+     final Color? effectiveInactiveTrackOutlineColor = widget.trackOutlineColor?.resolve(
+       inactiveStates,
+@@ -777,16 +785,20 @@
+     final Color effectiveInactiveIconColor = effectiveInactiveIcon?.color ?? CupertinoColors.black;
+ 
+     final activePressedStates = activeStates..add(WidgetState.pressed);
+-    final Color effectiveActivePressedThumbColor =
+-        _resolveThumbColor(widget.thumbColor, activePressedStates) ??
+-        _widgetThumbColor.resolve(activePressedStates) ??
+-        CupertinoColors.white;
++    final Color effectiveActivePressedThumbColor = CupertinoDynamicColor.resolve(
++      _resolveThumbColor(widget.thumbColor, activePressedStates) ??
++          _widgetThumbColor.resolve(activePressedStates) ??
++          CupertinoColors.white,
++      context,
++    );
+ 
+     final inactivePressedStates = inactiveStates..add(WidgetState.pressed);
+-    final Color effectiveInactivePressedThumbColor =
+-        _resolveThumbColor(widget.thumbColor, inactivePressedStates) ??
+-        _widgetThumbColor.resolve(inactivePressedStates) ??
+-        CupertinoColors.white;
++    final Color effectiveInactivePressedThumbColor = CupertinoDynamicColor.resolve(
++      _resolveThumbColor(widget.thumbColor, inactivePressedStates) ??
++          _widgetThumbColor.resolve(inactivePressedStates) ??
++          CupertinoColors.white,
++      context,
++    );
+ 
+     final WidgetStateProperty<MouseCursor> effectiveMouseCursor =
+         widget.mouseCursor ?? _defaultMouseCursor;
