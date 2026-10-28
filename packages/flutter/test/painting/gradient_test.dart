@@ -782,6 +782,25 @@ void main() {
     );
   });
 
+  test('SweepGradient.lerp preserves negative angles while colors change', () {
+    const first = SweepGradient(
+      startAngle: -math.pi / 2,
+      endAngle: -math.pi / 4,
+      colors: <Color>[Color(0xFFFF0000), Color(0xFF0000FF)],
+    );
+    const second = SweepGradient(
+      startAngle: -math.pi / 2,
+      endAngle: -math.pi / 4,
+      colors: <Color>[Color(0xFF00FF00), Color(0xFFFFFF00)],
+    );
+
+    for (final t in <double>[0, 0.5, 1]) {
+      final SweepGradient result = SweepGradient.lerp(first, second, t)!;
+      expect(result.startAngle, -math.pi / 2, reason: 't=$t');
+      expect(result.endAngle, -math.pi / 4, reason: 't=$t');
+    }
+  });
+
   test('SweepGradient.lerp identical a,b', () {
     expect(SweepGradient.lerp(null, null, 0), null);
     const gradient = SweepGradient(colors: <Color>[Color(0x33333333), Color(0x66666666)]);
