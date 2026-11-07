@@ -540,7 +540,7 @@ void main() {
   });
 
   test('TextStyle.lerp fades backgroundColor out when target is null', () {
-    const TextStyle style = TextStyle(backgroundColor: Color(0xFFFF0000));
+    const style = TextStyle(backgroundColor: Color(0xFFFF0000));
     expect(TextStyle.lerp(style, null, 0)!.backgroundColor, style.backgroundColor);
     expect(TextStyle.lerp(style, null, 0.25)!.backgroundColor!.a, closeTo(0.75, 0.001));
     expect(TextStyle.lerp(style, null, 1)!.backgroundColor!.a, 0);
